@@ -325,15 +325,15 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
   public abstract class Worker implements Runnable {
 
     protected Map<String, LostFileInfo> fileIndex = Collections.synchronizedMap(
-      new HashMap<String, LostFileInfo>());
+      new HashMap<String, LostFileInfo>());//保存所有扫描文件
     protected Map<JobID, TrackingUrlInfo> idToTrakcingUrlMap = 
         Collections.synchronizedMap(new HashMap<JobID, TrackingUrlInfo>());
     protected Map<Job, List<LostFileInfo>> jobIndex =
       Collections.synchronizedMap(new HashMap<Job, List<LostFileInfo>>());
     protected Map<Job, List<FailedFileInfo>> failJobIndex =
-        new HashMap<Job, List<FailedFileInfo>>();
+        new HashMap<Job, List<FailedFileInfo>>();//保存失败任务
     protected Map<Job, List<FailedFileInfo>> simFailJobIndex =
-      new HashMap<Job, List<FailedFileInfo>>();
+      new HashMap<Job, List<FailedFileInfo>>();//模拟的，没啥用
 
     private long jobCounter = 0;
     private AtomicInteger numJobsRunning = new AtomicInteger(0);
@@ -421,7 +421,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
         return;
       }
 
-      FileSystem fs = new Path("/").getFileSystem(getConf());
+      FileSystem fs = new Path("/").getFileSystem(getConf());//还是从根扫
       Map<String, Integer> lostFiles = getLostFiles(fs);
       long detectTime = System.currentTimeMillis();
       computePrioritiesAndStartJobs(fs, lostFiles, detectTime);
@@ -533,7 +533,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
     void checkJobs() throws IOException {
       List<Job> nonRunningJobs = new ArrayList<Job>();
       synchronized(jobIndex) {
-        Iterator<Job> jobIter = jobIndex.keySet().iterator();
+        Iterator<Job> jobIter = jobIndex.keySet().iterator();//所有的job
         while(jobIter.hasNext()) {
           Job job = jobIter.next();
   
@@ -681,6 +681,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
     /**
      * purge expired jobs from the file index
      */
+
     private void purgeFileIndex() {
       Iterator<String> fileIter = fileIndex.keySet().iterator();
       long now = System.currentTimeMillis();
@@ -1228,8 +1229,8 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
         "raid.job.submit.num.threads";
     public static final int RAIDNODE_JOB_SUBMIT_NUM_THREADS_DEFAULT = 5;
     public String[] corruptMonitorDirs = null;
-    public HashMap<String, MonitorSet> monitorSets;
-    public final String OTHERS = "others";
+    public HashMap<String, MonitorSet> monitorSets;//保存修复目录到MonitorSet的集合
+    public final String OTHERS = "others";//必须要包含other目录？？？
     public HashMap<Priority, HashSet<String>> jobFilesMap;
     public HashMap<Priority, AtomicLong> lastCheckingTimes;
     public AtomicLong numFilesSubmitted = new AtomicLong(0);
@@ -1262,7 +1263,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
           RAIDNODE_BLOCK_FIX_SCAN_SUBMISSION_INTERVAL_KEY, 
           DEFAULT_BLOCK_FIX_SCAN_SUBMISSION_INTERVAL);
       this.corruptMonitorDirs = DistBlockIntegrityMonitor.getCorruptMonitorDirs(
-          getConf());
+          getConf());//损坏文件存放目录
       this.monitorSets = new HashMap<String, MonitorSet>();
       for (String monitorDir : this.corruptMonitorDirs) {
         this.monitorSets.put(monitorDir, new MonitorSet(monitorDir));
@@ -1343,33 +1344,33 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
       return lostFiles;
     }
     
-    public void addToScanSet(String p, int numCorrupt, String monitorDir,
+    public void addToScanSet(String p, int numCorrupt, String monitorDir,//配置的目录
         ConcurrentHashMap<String, CorruptFile> newScanSet, FileSystem fs,
         long detectTime)
-            throws IOException {
+            throws IOException {//主要是两个作用，往目录所属newScanSet中添加文件，往待修复newScanSet集合中添加
       CorruptFile cf = new CorruptFile(p, numCorrupt, detectTime);
       MonitorSet monitorSet = monitorSets.get(monitorDir);
-      CorruptFile oldCf = monitorSet.toScanFiles.get(p);
+      CorruptFile oldCf = monitorSet.toScanFiles.get(p);//每个目录有一个monitorSet对象
       FileCheckRunnable fcr = new FileCheckRunnable(cf, monitorSet, fs,
-          detectTime, this);
+          detectTime, this);//在这里塞到
       if (oldCf == null) {
         newScanSet.put(p, cf);
-        monitorSet.toScanFiles.put(p,  cf);
+        monitorSet.toScanFiles.put(p,  cf);//也保存一份？什么用
         // Check the file
         cf.lastSubmitTime = System.currentTimeMillis();
-        monitorSet.executor.submit(fcr);
+        monitorSet.executor.submit(fcr);//新扫出来的文件，再次检查
       } else {
         if (oldCf.numCorrupt == numCorrupt) {
           newScanSet.put(p, oldCf);
           if (System.currentTimeMillis() - oldCf.lastSubmitTime >
-              this.blockFixScanSubmissionInterval) {
+              this.blockFixScanSubmissionInterval) { //已有文件检测间隔大于配置才会继续检测
             // if a block hasn't been checked for a while, check it again.
             oldCf.lastSubmitTime = System.currentTimeMillis();
-            monitorSet.executor.submit(fcr);
+            monitorSet.executor.submit(fcr);//检测文件的优先级
           }
         } else {
           cf.detectTime = oldCf.detectTime;
-          newScanSet.put(p, cf);
+          newScanSet.put(p, cf);//以后文件丢块不等于记录直接检测
           cf.lastSubmitTime = System.currentTimeMillis();
           monitorSet.executor.submit(fcr);  
         }
@@ -1418,7 +1419,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
               LOG.error("Hit an unexpected type:" + type.name());
             }
             // add back to original job files
-            synchronized(jobFiles) {
+            synchronized(jobFiles) {//提不上继续放在当前任务中
               this.jobFiles.addAll(tmpJobFiles);
             }
           }
@@ -1435,14 +1436,14 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
       HashSet<String> jobFiles = jobFilesMap.get(priority);
       
       synchronized(jobFiles) {
-        if (!jobFiles.add(path)) {
+        if (!jobFiles.add(path)) {//第一放入的文件，会执行后面的逻辑
           return System.currentTimeMillis() - startTime;
         }
         totalFilesToSubmit.incrementAndGet();
         // Check if we have hit the threshold for number of files in a job.
       
         AtomicLong lastCheckingTime = lastCheckingTimes.get(priority);
-        if ((jobFiles.size() >= filesPerTask * TASKS_PER_JOB)) {
+        if ((jobFiles.size() >= filesPerTask * TASKS_PER_JOB)) {//提交任务有两个条件，要么文件数够多，要么等待时间够多
           // Collect enough files
           this.asyncSubmitJob(jobFiles, priority, detectTime,
               UpdateNumFilesDropped.ADD);
@@ -1522,18 +1523,18 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
         worker = newWorker;
       }
       
-      public void run() {
+      public void run() {//检测文件的属性
         long startTime = System.currentTimeMillis();
-        try {
+        try {//提交文件所属优先队列的任务，不涉及其他队列
           if (corruptFile.numCorrupt <=0) {
             // Not corrupt
             return;
           }
           ConcurrentHashMap<String, CorruptFile> toScanFiles = 
               monitorSet.toScanFiles;
-          // toScanFiles could be switched before the task get executed
+          // toScanFiles could be switched before the task get executed//待扫描的集合已经被替换了
           CorruptFile cf = toScanFiles.get(corruptFile.path);
-          if (cf == null || cf.numCorrupt != corruptFile.numCorrupt) {
+          if (cf == null || cf.numCorrupt != corruptFile.numCorrupt) {//两次扫描不一致
             // Not exist or doesn't match
             return;
           }
@@ -1547,20 +1548,21 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
           Codec codec = BlockIntegrityMonitor.isParityFile(corruptFile.path);
           long addJobTime = 0;
           if (codec == null) {
-            if (stat.getReplication() >= notRaidedReplication) {
+            if (stat.getReplication() >= notRaidedReplication) { //可配置，默认是3，可通过设置文件副本来摒除文件修块
+              //用副本数来区分是否做raid
               cf.fileStatus = CorruptFileStatus.NOT_RAIDED_UNRECOVERABLE;
               return;
             }
             if (BlockIntegrityMonitor.doesParityDirExist(fs, corruptFile.path)) {
               Priority priority = Priority.LOW;
-              if (stat.getReplication() > 1) {
+              if (stat.getReplication() > 1) {//raid文件副本大于1，不论丢几个块都是高优先级
                 // If we have a missing block when replication > 1, it is high pri.
                 priority = Priority.HIGH;
               } else {
                 // Replication == 1. Assume Reed Solomon parity exists.
                 // If we have more than one missing block when replication == 1, then
                 // high pri.
-                priority = (corruptFile.numCorrupt > 1) ? Priority.HIGH : Priority.LOW;
+                priority = (corruptFile.numCorrupt > 1) ? Priority.HIGH : Priority.LOW;//rs 丢多余一个块高，否第低优先级
               }
               LostFileInfo fileInfo = fileIndex.get(corruptFile.path);
               if (fileInfo == null || priority.higherThan(
@@ -1579,7 +1581,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
               addJobTime = addToJobFilesMap(jobFilesMap, priority, corruptFile.path,
                   detectTime);
             }
-          }
+          }//判断文件是否可修复，给文件设置标签
           boolean isFileCorrupt = RaidShell.isFileCorrupt((DistributedFileSystem)fs,
               stat, false, getConf(), null, null);
           if (isFileCorrupt) {
@@ -1604,7 +1606,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
     void asyncSubmitJob(HashSet<String> jobFiles, Priority pri,
         long detectTime, UpdateNumFilesDropped type) throws IOException {
       synchronized(jobFiles) {
-        if (jobFiles.size() == 0)
+        if (jobFiles.size() == 0)//wait for long time and file size is zero
           return;
         HashSet<String> tmpJobFiles = new HashSet<String>();
         tmpJobFiles.addAll(jobFiles);
@@ -1623,20 +1625,20 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
 
       HashMap<String, ConcurrentHashMap<String, CorruptFile>>
           newToScanSet = new HashMap<String, ConcurrentHashMap<String,
-          CorruptFile>>();
+          CorruptFile>>();//目录->扫描出来的文件
       // Include "others"
       for (String monitorDir: this.monitorSets.keySet()) {
         newToScanSet.put(monitorDir, new ConcurrentHashMap<String,
-            CorruptFile>());
+            CorruptFile>());//每次都扫描都会创建
       }
       numFilesSubmitted.set(0);
       totalFilesToSubmit.set(0);
       for (Iterator<String> it = corruptFiles.keySet().iterator(); it.hasNext(); ) {
         String p = it.next();
-        int numCorrupt = corruptFiles.get(p);
+        int numCorrupt = corruptFiles.get(p);//这个文件丢了几个块
         // Filter through monitor dirs
         boolean match = false;
-        for (String monitorDir: this.corruptMonitorDirs) {
+        for (String monitorDir: this.corruptMonitorDirs) { //改进一：设置扫描那个目录，默认是根
           if (p.startsWith(monitorDir)) {
             match = true;
             addToScanSet(p, numCorrupt, monitorDir, newToScanSet.get(monitorDir),
@@ -1651,10 +1653,10 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
       // switch to new toScanSet
       for (String monitorDir : this.monitorSets.keySet()) {
         MonitorSet ms = this.monitorSets.get(monitorDir);
-        ms.toScanFiles = newToScanSet.get(monitorDir);
+        ms.toScanFiles = newToScanSet.get(monitorDir);//每次都更新一下扫描的文件
       }
       for (Priority pri : Priority.values()) {
-        HashSet<String> jobFiles = jobFilesMap.get(pri);
+        HashSet<String> jobFiles = jobFilesMap.get(pri);//防止有些文件队列无法及时提交任务
         if (System.currentTimeMillis() - lastCheckingTimes.get(pri).get()
             > this.blockFixSubmissionInterval && jobFiles.size() > 0) {
           this.asyncSubmitJob(jobFiles, pri, detectTime,
@@ -1975,7 +1977,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
     private BlockReconstructor reconstructor;
     public RaidProtocol raidnode;
     private UnixUserGroupInformation ugi;
-    RaidProtocol rpcRaidnode;
+    RaidProtocol rpcRaidnode;//传输修复情况
     private long detectTimeInput;
     private String taskId;
 
@@ -2047,7 +2049,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
       LOG.info("");
       LOG.info(prefix + "============================= BEGIN =============================");
       LOG.info(prefix + "Reconstruct File: " + fileStr);
-      LOG.info(prefix + "Block Missing Detection Time: " +
+      LOG.info(prefix + "Block Missing Detection Time: " +//检测时间
           dateFormat.format(detectTimeInput));
       long waitTime = sTime - detectTimeInput;
       LOG.info(prefix + "Scheduling Time: " + (waitTime/1000) + " seconds");
@@ -2087,7 +2089,7 @@ public class DistBlockIntegrityMonitor extends BlockIntegrityMonitor {
         String outkey = DistBlockIntegrityMonitor.FAILED_FILE + "," + fileStr;
         context.write(new Text(outkey), new Text(taskId));
       } finally {
-        if (recoveryTime > 0) {
+        if (recoveryTime > 0) { //记录修复消耗时间，供web ui使用
           // Send recoveryTime to raidnode
           try {
             raidnode.sendRecoveryTime(fileStr, recoveryTime, taskId);

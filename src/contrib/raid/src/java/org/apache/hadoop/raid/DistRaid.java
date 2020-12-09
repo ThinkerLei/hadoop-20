@@ -104,11 +104,11 @@ public class DistRaid {
    * The key in the map function is formated as:
    * "startStripeId encodingId encodingUnit path"
    * Given a file path /user/dhruba/1 with 13 blocks
-   * Suppose codec's stripe length is 3 and encoding unit is 2
-   * RaidNode.splitPaths will split the raiding task into 3 tasks
+   * Suppose codec's stripe length is 3 and encoding unit is 2 ：enchodeing unit 也可以是每个每个map包含的条纹数
+  * RaidNode.splitPaths will split the raiding task into 3 tasks
    * "0 1 2 /user/dhruba/1": will raid the stripe 0 and 1 (blocks 0-5)
    * "2 2 2 /user/dhruba/1": will raid the stripe 2 and 3 (blocks 6-11)
-   * "4 3 2 /user/dhruba/1": will raid the stripe 4 (blocks 12-13)
+   * "4 3 2 /user/dhruba/1": will raid the stripe 4 (blocks 12-13) startStripeIndex=4 对应此单元开始编码的块为4*3=12，即第12个
    * encodingId is unique for each task and it's used to construct a temporary
    * directory to store the partial parity file
    * modificationTime is the modification time of candidate when job is submitted
@@ -301,13 +301,13 @@ public class DistRaid {
       long sleepTimeBetwRetry = jobconf.getLong(SLEEP_TIME_BETWEEN_RETRY_KEY,
                                             DEFAULT_SLEEP_TIME_BETWEEN_RETRY);
       EncodingCandidate ec = EncodingCandidate.getEncodingCandidate(key, jobconf);
-      for (int i = 0; i < retryNum; i++) {
+      for (int i = 0; i < retryNum; i++) {//在这里进行重试
         LOG.info("The " + i + "th attempt: " + s);
         if (ec.srcStat == null) {
           LOG.info("Raiding Candidate doesn't exist, NO_ACTION");
           return false;
         }
-        if (ec.modificationTime != ec.srcStat.getModificationTime()) {
+        if (ec.modificationTime != ec.srcStat.getModificationTime()) {//比对修改时间，防止期间被修改
           LOG.info("Raiding Candidate was changed, NO_ACTION");
           return false;
         }
@@ -550,11 +550,11 @@ public class DistRaid {
     try {
       opWriter = SequenceFile.createWriter(fs, jobconf, opList, Text.class,
           PolicyInfo.class, SequenceFile.CompressionType.NONE);
-      for (RaidPolicyPathPair p : raidPolicyPathPairList) {
+      for (RaidPolicyPathPair p : raidPolicyPathPairList) {//筛选出来的候选者
         // If a large set of files are Raided for the first time, files
         // in the same directory that tend to have the same size will end up
         // with the same map. This shuffle mixes things up, allowing a better
-        // mix of files.
+        // mix of files.将大小不同的文件尽可能的打散
         java.util.Collections.shuffle(p.srcPaths);
         for (EncodingCandidate ec : p.srcPaths) {
           opWriter.append(new Text(ec.toString()), p.policy);

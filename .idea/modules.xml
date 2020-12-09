@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/benchmark/src/benchmark.iml" filepath="$PROJECT_DIR$/src/contrib/benchmark/src/benchmark.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/benchmarks/benchmarks.iml" filepath="$PROJECT_DIR$/src/benchmarks/benchmarks.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/capacity-scheduler/src/capacity-scheduler.iml" filepath="$PROJECT_DIR$/src/contrib/capacity-scheduler/src/capacity-scheduler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/corona/src/corona.iml" filepath="$PROJECT_DIR$/src/contrib/corona/src/corona.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/data_join/src/data_join.iml" filepath="$PROJECT_DIR$/src/contrib/data_join/src/data_join.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/dynamicclouds/src/dynamicclouds.iml" filepath="$PROJECT_DIR$/src/contrib/dynamicclouds/src/dynamicclouds.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/eclipse-plugin/src/eclipse-plugin.iml" filepath="$PROJECT_DIR$/src/contrib/eclipse-plugin/src/eclipse-plugin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/failmon/src/failmon.iml" filepath="$PROJECT_DIR$/src/contrib/failmon/src/failmon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/fairscheduler/src/fairscheduler.iml" filepath="$PROJECT_DIR$/src/contrib/fairscheduler/src/fairscheduler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/fsshellservice/fsshellservice.iml" filepath="$PROJECT_DIR$/src/contrib/fsshellservice/fsshellservice.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/fsshellservice/src/fsshellservice1.iml" filepath="$PROJECT_DIR$/src/contrib/fsshellservice/src/fsshellservice1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/fuse-dfs/src/fuse-dfs.iml" filepath="$PROJECT_DIR$/src/contrib/fuse-dfs/src/fuse-dfs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/gridmix/src/gridmix.iml" filepath="$PROJECT_DIR$/src/contrib/gridmix/src/gridmix.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/benchmarks/gridmix2/src/gridmix2.iml" filepath="$PROJECT_DIR$/src/benchmarks/gridmix2/src/gridmix2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/hadoop-20.iml" filepath="$PROJECT_DIR$/src/hadoop-20.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/hdfsproxy/src/hdfsproxy.iml" filepath="$PROJECT_DIR$/src/contrib/hdfsproxy/src/hdfsproxy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/highavailability/src/highavailability.iml" filepath="$PROJECT_DIR$/src/contrib/highavailability/src/highavailability.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/hive-streaming/src/hive-streaming.iml" filepath="$PROJECT_DIR$/src/contrib/hive-streaming/src/hive-streaming.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/hmon/src/hmon.iml" filepath="$PROJECT_DIR$/src/contrib/hmon/src/hmon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/index/src/index.iml" filepath="$PROJECT_DIR$/src/contrib/index/src/index.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/mumak/src/mumak.iml" filepath="$PROJECT_DIR$/src/contrib/mumak/src/mumak.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/namespace-notifier/src/namespace-notifier.iml" filepath="$PROJECT_DIR$/src/contrib/namespace-notifier/src/namespace-notifier.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/namespace-notifier/namespace-notifier1.iml" filepath="$PROJECT_DIR$/src/contrib/namespace-notifier/namespace-notifier1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/raid/src/raid.iml" filepath="$PROJECT_DIR$/src/contrib/raid/src/raid.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/seekablecompression/src/seekablecompression.iml" filepath="$PROJECT_DIR$/src/contrib/seekablecompression/src/seekablecompression.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/snapshot/src/snapshot.iml" filepath="$PROJECT_DIR$/src/contrib/snapshot/src/snapshot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/storageservice/src/storageservice.iml" filepath="$PROJECT_DIR$/src/contrib/storageservice/src/storageservice.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/streaming/src/streaming.iml" filepath="$PROJECT_DIR$/src/contrib/streaming/src/streaming.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/thriftdatanode/src/thriftdatanode.iml" filepath="$PROJECT_DIR$/src/contrib/thriftdatanode/src/thriftdatanode.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/thriftdatanode/thriftdatanode1.iml" filepath="$PROJECT_DIR$/src/contrib/thriftdatanode/thriftdatanode1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/thriftfs/src/thriftfs.iml" filepath="$PROJECT_DIR$/src/contrib/thriftfs/src/thriftfs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/thriftfs/thriftfs1.iml" filepath="$PROJECT_DIR$/src/contrib/thriftfs/thriftfs1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/src/contrib/vaidya/src/vaidya.iml" filepath="$PROJECT_DIR$/src/contrib/vaidya/src/vaidya.iml" />
+    </modules>
+  </component>
+</project>

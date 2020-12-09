@@ -121,10 +121,10 @@ public class Codec implements Serializable {
   /**
    * Is file-level raiding or directory-level raiding
    */
-  public boolean isDirRaid;
+  public boolean isDirRaid;//允许目录级别raid
 
   private static List<Codec> codecs;
-  private static Map<String, Codec> idToCodec;
+  private static Map<String, Codec> idToCodec;//在类的静态方法中初始化
 
   /**
    * Get single instantce of the list of codecs ordered by priority.

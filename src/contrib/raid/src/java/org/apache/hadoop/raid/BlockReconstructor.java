@@ -110,7 +110,7 @@ abstract class BlockReconstructor extends Configured {
       return false;
     }
 
-    if (RaidNode.isParityHarPartFile(srcPath)) {
+    if (RaidNode.isParityHarPartFile(srcPath)) {// no use
       return processParityHarPartFile(srcPath, progress);
     }
 
@@ -320,7 +320,7 @@ abstract class BlockReconstructor extends Configured {
             " expected crc:" + oldCRC);
         if (crc != null && oldCRC != null &&
             crc.getValue() != oldCRC) {
-          // checksum doesn't match, it's dangerous to send it
+          // checksum doesn't match, it's dangerous to send it。比对两次校验值是否一致
           IOException ioe = new IOException("Block " + lostBlock.toString() +
               " new checksum " + crc.getValue() +
               " doesn't match the old one " + oldCRC);
@@ -381,7 +381,7 @@ abstract class BlockReconstructor extends Configured {
     FileStatus srcStat = srcFs.getFileStatus(srcPath);
 
     // Check timestamp.
-    if (srcStat.getModificationTime() != parityStat.getModificationTime()) {
+    if (srcStat.getModificationTime() != parityStat.getModificationTime()) {//源文件与校验文件修改时间必须一致
       LOG.warn("Mismatching timestamp for " + srcPath + " and " + parityPath + 
           ", ignoring...");
       return false;
@@ -390,7 +390,7 @@ abstract class BlockReconstructor extends Configured {
     String uriPath = parityPath.toUri().getPath();
     int numBlocksReconstructed = 0;
     List<LocatedBlockWithMetaInfo> lostBlocks = 
-      lostBlocksInFile(parityFs, uriPath, parityStat);
+      lostBlocksInFile(parityFs, uriPath, parityStat);//通过open方式获取丢块信息
     if (lostBlocks.size() == 0) {
       LOG.warn("Couldn't find any lost blocks in parity file " + parityPath + 
           ", ignoring...");
@@ -399,7 +399,7 @@ abstract class BlockReconstructor extends Configured {
     List<Block> blocksLostChecksum = new ArrayList<Block>();
     List<Block> blocksLostStripe = new ArrayList<Block>();
     
-    for (LocatedBlockWithMetaInfo lb: lostBlocks) {
+    for (LocatedBlockWithMetaInfo lb: lostBlocks) {//遍历丢失块进行修块
       Block lostBlock = lb.getBlock();
       long lostBlockOffset = lb.getStartOffset();
       LOG.info("Found lost block " + lostBlock +
@@ -407,11 +407,11 @@ abstract class BlockReconstructor extends Configured {
       
       Long oldCRC = decoder.retrieveChecksum(lostBlock,
           parityPath, lostBlockOffset, parityFs, context);
-      if (abortReconstruction(oldCRC, decoder)) {
+      if (abortReconstruction(oldCRC, decoder)) {//必须所有丢失块的校验和必须放在数据库
         blocksLostChecksum.add(lostBlock);
         continue;
       }
-      StripeInfo si = decoder.retrieveStripe(lostBlock,
+      StripeInfo si = decoder.retrieveStripe(lostBlock,//通过数据库获取块所在条纹的信息
           srcPath, lostBlockOffset, srcFs, context, false);
       if (si == null && decoder.stripeStore != null) {
         blocksLostStripe.add(lostBlock);
@@ -507,7 +507,7 @@ abstract class BlockReconstructor extends Configured {
         computeMetadataAndSendReconstructedBlock(localBlockFile,
             lostBlock, 
             localBlockFile.length(),
-            lb.getLocations(),
+            lb.getLocations(),//只是会规避之前存储此块的DN
             lb.getDataProtocolVersion(), lb.getNamespaceID(),
             progress);
         

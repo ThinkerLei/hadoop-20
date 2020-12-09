@@ -224,7 +224,7 @@ public class Decoder {
     try {
       out = new FileOutputStream(localBlockFile);
       return fixErasedBlock(srcFs, srcStat, parityFs, parityPath,
-                            false, blockSize, blockOffset, blockSize,
+                            false, blockSize, blockOffset, blockSize,//修校验文件时，fixSoutce是false
                             false, out, si, context, false);
     } finally {
       if (out != null) {
@@ -355,7 +355,7 @@ public class Decoder {
   CRC32 fixErasedBlock(
       FileSystem srcFs, FileStatus srcStat, FileSystem parityFs, Path parityFile,
       boolean fixSource,
-      long blockSize, long errorOffset, long limit, boolean partial,
+      long blockSize, long errorOffset, long limit, boolean partial,//false
       OutputStream out, StripeInfo si, Context context,
       boolean skipVerify) throws IOException, InterruptedException {
     configureBuffers(blockSize);
@@ -524,11 +524,11 @@ public class Decoder {
     
     if (recoverFromStripeStore) {
       erasedLocationToFix = si.getBlockIdxInStripe(lostBlock);
-    } else if (fixSource) {
-      lp = StripeReader.getBlockLocation(codec, srcFs,
+    } else if (fixSource) {//修复校验文件，此时fixsource是false
+      lp = StripeReader.getBlockLocation(codec, srcFs,//获取丢失块及对应原块分组
           srcFile, blockIdx, conf);
       erasedLocationToFix = codec.parityLength + lp.getBlockIdxInStripe(); 
-    } else {
+    } else {//修复原文件
       lp = StripeReader.getParityBlockLocation(codec, blockIdx);
       erasedLocationToFix = lp.getBlockIdxInStripe();
     }

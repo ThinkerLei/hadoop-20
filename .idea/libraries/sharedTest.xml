@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="sharedTest">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/src/test/org/apache/hadoop/mapred/sharedTest1/sharedTest.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

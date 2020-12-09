@@ -88,9 +88,9 @@ public class ReedSolomonDecoder extends Decoder {
     }
     
     long start = System.currentTimeMillis();
-    FSDataInputStream[] inputs = new FSDataInputStream[stripeSize + paritySize];
+    FSDataInputStream[] inputs = new FSDataInputStream[stripeSize + paritySize];//按分组来读取文件
     int[] erasedLocations = buildInputs(fs, srcFile, parityFs, parityFile, 
-                                        fixSource, errorOffset, inputs);
+                                        fixSource, errorOffset, inputs);//建立读取校验文件与源文件的输入流
     int erasedLocationToFix;
     if (fixSource) {
       int blockIdxInStripe = ((int)(errorOffset/blockSize)) % stripeSize;
@@ -109,7 +109,7 @@ public class ReedSolomonDecoder extends Decoder {
     parallelDecoder = Executors.newFixedThreadPool(parallelism, reedSolomonDecoderFactory);
     ParallelStreamReader parallelReader = new ParallelStreamReader(
       reporter, inputs, bufSize, parallelism, boundedBufferCapacity, blockSize);
-    parallelReader.start();
+    parallelReader.start();//??
     decodeTime = 0;
     waitTime = 0;
     try {
@@ -149,7 +149,7 @@ public class ReedSolomonDecoder extends Decoder {
       // First open streams to the parity blocks.
       for (int i = 0; i < paritySize; i++) {
         long offset = blockSize * (stripeIdx * paritySize + i);
-        if ((!fixSource) && offset == errorOffset) {
+        if ((!fixSource) && offset == errorOffset) {//修源文件fixSource才是true
           LOG.info(parityFile + ":" + offset + 
               " is known to have error, adding zeros as input " + i);
           inputs[i] = new FSDataInputStream(new RaidUtils.ZeroInputStream(
@@ -163,7 +163,7 @@ public class ReedSolomonDecoder extends Decoder {
         } else {
           FSDataInputStream in = parityFs.open(
               parityFile, conf.getInt("io.file.buffer.size", 64 * 1024));
-          in.seek(offset);
+          in.seek(offset);//seek 一个丢了的块不会抛异常，只有在真正读的时候才会
           LOG.info("Adding " + parityFile + ":" + offset + " as input " + i);
           inputs[i] = in;
         }

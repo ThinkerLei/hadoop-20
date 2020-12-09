@@ -369,7 +369,7 @@ public abstract class BlockIntegrityMonitor extends Configured {
     // Check if it is impossible to have a parity file. We check if the
     // parent directory of the lost file exists under a parity path.
     // If the directory does not exist, the parity file cannot exist.
-    Path fileRaidParent = new Path(path).getParent();
+    Path fileRaidParent = new Path(path).getParent();//
     Path dirRaidParent = (fileRaidParent != null)? fileRaidParent.getParent(): null;
     boolean parityCanExist = false;
     for (Codec codec: Codec.getCodecs()) {
@@ -412,7 +412,7 @@ public abstract class BlockIntegrityMonitor extends Configured {
 
   static public String[] getCorruptMonitorDirs(Configuration conf) {
     return conf.getStrings(
-        RAIDNODE_CORRUPT_FILE_COUNTER_DIRECTORIES_KEY,
+        RAIDNODE_CORRUPT_FILE_COUNTER_DIRECTORIES_KEY,//可以配置扫描那个目录了
         DEFAULT_CORRUPT_FILE_COUNTER_DIRECTORIES);
   }
   

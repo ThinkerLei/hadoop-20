@@ -1043,7 +1043,7 @@ public class RaidShell extends Configured implements Tool {
                                 AtomicLong numNonRaidedMissingBlks,
                                 Map<String, AtomicLongArray> numStrpMissingBlksMap) 
     throws IOException {
-    if (fileStat == null) {
+    if (fileStat == null) {//文件已被删除，文件不是损坏
       return false;
     }
     Path filePath = fileStat.getPath();
@@ -1060,7 +1060,7 @@ public class RaidShell extends Configured implements Tool {
         raidInfo = RaidUtils.getFileRaidInfo(fileStat, conf, false);
       }
       if (raidInfo.codec == null) {
-        // Couldn't find out the parity file, so the file is corrupt
+        // Couldn't find out the parity file, so the file is corrupt找不到校验文件，文件已损坏
         int count = collectNumCorruptBlocksInFile(dfs, filePath);
         if (cntMissingBlksPerStrp && numNonRaidedMissingBlks != null) {
           numNonRaidedMissingBlks.addAndGet(count);

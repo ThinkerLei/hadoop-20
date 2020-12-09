@@ -77,13 +77,13 @@ public class Encoder {
   protected Codec codec;
   protected ErasureCode code;
   protected Random rand;
-  protected int bufSize;
-  protected int maxBufSize;
+  protected int bufSize;//默认1M
+  protected int maxBufSize;//默认1M
   protected int retryCountPartialEncoding;
   protected byte[][] readBufs;
   protected byte[][] writeBufs;
-  protected ChecksumStore checksumStore;
-  protected StripeStore stripeStore;
+  protected ChecksumStore checksumStore;//记录每一个校验文件每一个块crc校验值
+  protected StripeStore stripeStore;//只针对dirRaid情况使用
   protected boolean requiredChecksumStore = false;
 
   /**
@@ -301,10 +301,10 @@ public class Encoder {
     if (!parityFs.mkdirs(tmpDir)) {
       throw new IOException("Could not create tmp dir " + tmpDir);
     }
-    Path parityTmp = new Path(tmpDir, parityFile.getName() + rand.nextLong());
+    Path parityTmp = new Path(tmpDir, parityFile.getName() + rand.nextLong());//多个map不会创建到同一个文件？？
     FSDataOutputStream out = parityFs.create(
                                parityTmp,
-                               true,
+                               true,//重新创建
                                conf.getInt("io.file.buffer.size", 64 * 1024),
                                tmpRepl,
                                blockSize);
@@ -349,7 +349,7 @@ public class Encoder {
   }
   
   public boolean finishAllPartialEncoding(FileSystem parityFs,
-      Path tmpPartialParityDir, long expectedNum)
+      Path tmpPartialParityDir, long expectedNum)//expectedNum为stripe个数
           throws IOException, InterruptedException {
     //Verify if we finish all partial encoding
     try {
@@ -357,7 +357,7 @@ public class Encoder {
       long len = 0;
       for (int i = 0; i < this.retryCountPartialEncoding; i++) {
         stats = parityFs.listStatus(tmpPartialParityDir);
-        len = stats != null ? stats.length : 0;
+        len = stats != null ? stats.length : 0;//stats是保存目录下的所有文件的数组
         if (len == expectedNum) {
           return true;
         }
@@ -369,7 +369,7 @@ public class Encoder {
           tmpPartialParityDir + " is " + len + 
           ". It's different from expected number " + expectedNum);
       return false;
-    } catch (FileNotFoundException fnfe) {
+    } catch (FileNotFoundException fnfe) {//其他线程操作了，这是一种情况，多线程下
       LOG.info("The temp directory is already moved to final partial" + 
                " directory");
       return false;
@@ -407,7 +407,7 @@ public class Encoder {
     }
 
     String partialParityName = "partial_" + MD5Hash.digest(srcFile.toUri().getPath()) +
-        "_" + ec.srcStat.getModificationTime() + "_" + ec.encodingUnit + "_" +
+        "_" + ec.srcStat.getModificationTime() + "_" + ec.encodingUnit + "_" +//计算分片已经算好了单元
         ec.encodingId;
     Path partialParityDir = new Path(tmpDir, partialParityName);
     Path tmpPartialParityDir = new Path(partialParityDir, "tmp");
@@ -422,7 +422,7 @@ public class Encoder {
         RaidNode.DEFAULT_RAID_PARITY_INITIAL_REPL);
     
     Path finalTmpParity = null;
-    /**
+    /**用这三个变量表示这个目录、文件是否raid完成
      * To support retriable encoding, we use three checkpoints to represent
      * the last success state. 
      * 1. isEncoded: Set to true when partial partiy is generated
@@ -443,20 +443,20 @@ public class Encoder {
                            partialTmpParity, parityFile, tmpRepl, blockSize,
                            expectedPartialParityBlocks, expectedPartialParityFileSize,
                            reporter)) {
-          return false;
+          return false;//所有的return直接返回，不会重试
         }
         LOG.info("Encoded partial parity " + partialTmpParity);
       }
-      ec.isEncoded = true;
+      ec.isEncoded = true;//表明当前stripe已经写完了
       long expectedNum = (long) Math.ceil(numStripes * 1.0 / ec.encodingUnit);
       if (!ec.isRenamed) {
-        if (!finishAllPartialEncoding(parityFs, tmpPartialParityDir, expectedNum)) {
+        if (!finishAllPartialEncoding(parityFs, tmpPartialParityDir, expectedNum)) {//当前map完成了
           return false;
         }
         InjectionHandler.processEventIO(
             InjectionEvent.RAID_ENCODING_FAILURE_RENAME_FILE);
         // Move the directory to final
-        if (!dfs.rename(tmpPartialParityDir, finalPartialParityDir)) {
+        if (!dfs.rename(tmpPartialParityDir, finalPartialParityDir)) {//只有一个map能执行成功
           LOG.info("Fail to rename " + tmpPartialParityDir + " to " +
               finalPartialParityDir);
           return false;
@@ -469,7 +469,7 @@ public class Encoder {
       // Verify partial parities are correct
       Vector<Path> partialPaths = getPartialPaths((int)ec.encodingUnit,
           (int)expectedNum, stats, codec, numStripes);
-      finalTmpParity = partialPaths.get(0);
+      finalTmpParity = partialPaths.get(0);//第一个encodingUnit
       InjectionHandler.processEventIO(
           InjectionEvent.RAID_ENCODING_FAILURE_CONCAT_FILE);
       if (partialPaths.size() > 1) {
@@ -477,7 +477,7 @@ public class Encoder {
             partialPaths.size()).toArray(new Path[partialPaths.size() - 1]);
         try {
           // Concat requires source and target files are in the same directory
-          dfs.concat(finalTmpParity, restPaths, true);
+          dfs.concat(finalTmpParity, restPaths, true);//将后续校验文件依次存入第一个文件中
           LOG.info("Concated " + partialPaths.size() + " files into " + finalTmpParity);
           
         } catch (IOException ioe) {
@@ -641,21 +641,21 @@ public class Encoder {
     try {
       // Loop over stripe
       boolean redo;
-      while (sReader.hasNext()) {
+      while (sReader.hasNext()) {//判断当前map计算几个stripe
         reporter.progress();
         StripeInputInfo stripeInputInfo = null;
         InputStream[] blocks = null;
         // Create input streams for blocks in the stripe.
-        long currentStripeIdx = sReader.getCurrentStripeIdx();
-        stripeInputInfo = sReader.getNextStripeInputs();
+        long currentStripeIdx = sReader.getCurrentStripeIdx();//指定的stripStartIndex
+        stripeInputInfo = sReader.getNextStripeInputs();//获取对应stripe的输入流
         // The offset of first temporary output stream
         long encodeStartOffset = out.getPos();
-        int retry = 3;
+        int retry = 3;//外层有一个大的循环
         do {
           redo = false;
           retry --;
           try {
-            blocks = stripeInputInfo.getInputs();
+            blocks = stripeInputInfo.getInputs();//第一个条纹的输入流
             CRC32[] curCRCOuts = new CRC32[codec.parityLength];
             
             if (crcOuts != null) {
@@ -664,7 +664,7 @@ public class Encoder {
                     = new CRC32();
               }
             }
-            // Create output streams to the temp files.
+            // Create output streams to the temp files.计算生成块的crc,放在DB中
             for (int i = 0; i < codec.parityLength - 1; i++) {
               tmpOuts[i + 1] = new FileOutputStream(tmpFiles[i]);
             }
@@ -672,15 +672,15 @@ public class Encoder {
             encodeStripe(blocks, blockSize, tmpOuts, curCRCOuts, reporter, 
                 true, errorLocations);
           } catch (IOException e) {
-            if (out.getPos() > encodeStartOffset) {
+            if (out.getPos() > encodeStartOffset) { //这是已经写了，所有走这个
               // Partial data is already written, throw the exception
               InjectionHandler.processEventIO(
                   InjectionEvent.RAID_ENCODING_PARTIAL_STRIPE_ENCODED);
               throw e;
             }
             // try to fix the missing block in the stripe using stripe store.
-            if ((e instanceof BlockMissingException || 
-                e instanceof ChecksumException) && codec.isDirRaid) {
+            if ((e instanceof BlockMissingException || //第一次raid不会有blockmissing，应该是在目录有修改后有的文件missing了
+                e instanceof ChecksumException) && codec.isDirRaid) {//检测校验快是否符合时，会生副本吗？？？
               if (retry <= 0) {
                 throw e;
               }
@@ -710,7 +710,7 @@ public class Encoder {
             } 
           } finally {
             if (blocks != null) {
-              RaidUtils.closeStreams(blocks);
+              RaidUtils.closeStreams(blocks);//在修复blockmissing后重新重新打开流，
             }
           }
           if (redo) {
@@ -748,7 +748,7 @@ public class Encoder {
    * across block boundaries.
    */
   void encodeStripe(
-    InputStream[] blocks,
+    InputStream[] blocks,//条纹中bocks个数
     long blockSize,
     OutputStream[] outs,
     CRC32[] crcOuts,
@@ -771,7 +771,7 @@ public class Encoder {
           throw new IOException("Interrupted while waiting for read result");
         }
         // Cannot tolerate any IO errors.
-        IOException readEx = readResult.getException();
+        IOException readEx = readResult.getException();//获取所有输入流遇到的exception
         if (readEx != null) {
           if (errorLocations != null) {
             errorLocations.clear();
@@ -779,7 +779,7 @@ public class Encoder {
               errorLocations.add(idx);
             }
           }
-          throw readEx;
+          throw readEx;//抛出
         }
 
         code.encodeBulk(readResult.readBufs, writeBufs);

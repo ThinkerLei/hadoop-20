@@ -197,7 +197,7 @@ public class DirectoryTraversal {
       if (elements != null) {
         boolean isLeafDir = true;
         for (FileStatus element : elements) {
-          if (element.isDir()) {
+          if (element.isDir()) {//目录下所有都是文件才叫页目录
             subDirs.add(element.getPath());
             isLeafDir = false;
           }

@@ -99,7 +99,7 @@ public class DistRaidNode extends RaidNode {
     DistRaid dr = new DistRaid(conf);
     //add paths for distributed raiding
     dr.addRaidPaths(info, lec);
-    boolean started = dr.startDistRaid();
+    boolean started = dr.startDistRaid();//写数据
     if (started) {
       jobMonitor.monitorJob(info.getName(), dr);
     } else {

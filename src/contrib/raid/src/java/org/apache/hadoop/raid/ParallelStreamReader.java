@@ -49,7 +49,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 public class ParallelStreamReader {
   public static final Log LOG = LogFactory.getLog(ParallelStreamReader.class);
   Progressable reporter;
-  InputStream[] streams;
+  InputStream[] streams;//条纹中block个数
   OutputStream[] outs = null;
   long[] endOffsets; //read boundary of each stream
   final boolean computeChecksum;

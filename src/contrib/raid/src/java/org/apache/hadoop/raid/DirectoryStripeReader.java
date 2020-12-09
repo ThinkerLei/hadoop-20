@@ -66,7 +66,7 @@ public class DirectoryStripeReader extends StripeReader {
       List<FileStatus> lfs) {
     long parityBlockSize = 0L; 
     for (FileStatus fsStat: lfs) {
-      long size = Math.min(fsStat.getBlockSize(), fsStat.getLen());
+      long size = Math.min(fsStat.getBlockSize(), fsStat.getLen());//如果文件全部小于一个块长度，那就是文件中最长的。否则就是块长度
       if ( size > parityBlockSize) {
         parityBlockSize = size;
       }
@@ -145,14 +145,14 @@ public class DirectoryStripeReader extends StripeReader {
     this.parityBlockSize = getParityBlockSize(conf, lfs);
     this.srcDir = srcDir;
     this.lfs = lfs;
-    this.stripeBlocks = new ArrayList<BlockInfo>();
+    this.stripeBlocks = new ArrayList<BlockInfo>();//保存目录下所有文件所有块
     long blockNum = 0L;
     for (int fid = 0; fid < lfs.size(); fid++) {
       FileStatus fsStat = lfs.get(fid);
       long numBlock = RaidNode.getNumBlocks(fsStat);
       blockNum += numBlock;
       for (int bid = 0; bid < numBlock; bid++) {
-        stripeBlocks.add(new BlockInfo(fid, bid));
+        stripeBlocks.add(new BlockInfo(fid, bid));//顺序保存了目录下文件的块，记录了块所在文件在lfs中的位置
       }
     }
     this.numBlocks = blockNum; 
@@ -174,10 +174,10 @@ public class DirectoryStripeReader extends StripeReader {
     Path[] srcPaths = new Path[codec.stripeLength];
     long[] offsets = new long[codec.stripeLength];
     try {
-      int startOffset = (int)stripeIdx * codec.stripeLength;
+      int startOffset = (int)stripeIdx * codec.stripeLength;//计算起始读取位置
       for (int i = 0; i < codec.stripeLength; i++) {
         if (startOffset + i < this.stripeBlocks.size()) {
-          BlockInfo bi = this.stripeBlocks.get(startOffset + i);
+          BlockInfo bi = this.stripeBlocks.get(startOffset + i);//字典排序的文件，然后stripeBlocks依次包含了所有块
           FileStatus curFile = lfs.get(bi.fileIdx);
           long seekOffset = bi.blockId * curFile.getBlockSize();
           Path srcFile = curFile.getPath();
@@ -189,14 +189,14 @@ public class DirectoryStripeReader extends StripeReader {
           offsets[i] = seekOffset;
         } else {
           LOG.info("Using zeros at block " + i);
-          // We have no src data at this offset.
+          // We have no src data at this offset.最后一个stripe有没有数据的情况
           blocks[i] = new RaidUtils.ZeroInputStream(parityBlockSize);
           srcPaths[i] = null;
           offsets[i] = -1;
         }
       }
       return new StripeInputInfo(blocks, srcPaths, offsets);
-    } catch (IOException e) {
+    } catch (IOException e) {//会重试
       // If there is an error during opening a stream, close the previously
       // opened streams and re-throw.
       RaidUtils.closeStreams(blocks);

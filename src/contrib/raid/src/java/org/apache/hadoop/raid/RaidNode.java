@@ -399,7 +399,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
   private void cleanUpDirectory(String dir, Configuration conf) 
       throws IOException {
     Path pdir = new Path(dir);
-    FileSystem fs = pdir.getFileSystem(conf);
+    FileSystem fs = pdir.getFileSystem(conf);//这个dir是什么
     if (fs.exists(pdir)) {
       fs.delete(pdir);
     }
@@ -414,7 +414,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
   
   private void addTmpJars(Configuration conf) throws URISyntaxException {
     StringBuilder jarLocations = new StringBuilder();
-    String[] uploadClassNames = conf.getStrings(RAID_MAPREDUCE_UPLOAD_CLASSES);
+    String[] uploadClassNames = conf.getStrings(RAID_MAPREDUCE_UPLOAD_CLASSES);//新上传一依赖放在tmp下
     if (uploadClassNames == null || uploadClassNames.length == 0) {
       LOG.warn("Key " + RAID_MAPREDUCE_UPLOAD_CLASSES + " is not defined");
       return;
@@ -1223,7 +1223,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
           this.putPolicyInfo(info);
 
           List<FileStatus> filteredPaths = null;
-          if (shouldReadFileList(info)) {
+          if (shouldReadFileList(info)) { //不同点：通过配置做raid文件路径指定做raid的目录，动态修改配置即可
             filteredPaths = readFileList(info);
           } else if (shouldSelectFiles(info)) {
             LOG.info("Triggering Policy Filter " + info.getName() +
@@ -1331,10 +1331,10 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
       } else {
         numBlocks = RaidNode.numBlocks(s);
       }
-      long numStripes = RaidNode.numStripes(numBlocks, codec.stripeLength);
+      long numStripes = RaidNode.numStripes(numBlocks, codec.stripeLength);//计算当前目录的条纹数
       String encodingId = System.currentTimeMillis() + "." + rand.nextLong();
       for (long startStripe = 0; startStripe < numStripes;
-           startStripe += encodingUnit) {
+           startStripe += encodingUnit) { //切分当前遍历目录为多个编码单元，单元之间包含的条纹数由encodingUnit决定
         lec.add(new EncodingCandidate(s, startStripe, encodingId, encodingUnit,
             s.getModificationTime()));
       }
@@ -1414,7 +1414,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
     if (null == files) {
       return null;
     }
-    for (FileStatus stat : files) {
+    for (FileStatus stat : files) { //制作某个目录下全是文件的情况
       if (stat.isDir()) {
         return null;
       } 
@@ -1608,13 +1608,13 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
     FileStatus stat = ec.srcStat;
     Path p = stat.getPath();
     FileSystem srcFs = p.getFileSystem(conf);
-    List<FileStatus> lfs = RaidNode.listDirectoryRaidFileStatus(conf, srcFs, p);
+    List<FileStatus> lfs = RaidNode.listDirectoryRaidFileStatus(conf, srcFs, p);//列出目录下的所有文件，新建目录也不做了
     if (lfs == null) {
       return LOGRESULTS.NOACTION;
     }
     
     // add up the total number of blocks in the directory
-    long blockNum = DirectoryStripeReader.getBlockNum(lfs);
+    long blockNum = DirectoryStripeReader.getBlockNum(lfs);//获取文件一共又多少块
     
     // if the directory has fewer than 2 blocks, then nothing to do
     if (blockNum <= 2) {
@@ -1711,7 +1711,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
     if (!parityGenerated) {
       return LOGRESULTS.NOACTION;
     }
-    if (!doSimulate) {
+    if (!doSimulate) { //非模拟，设置副本数
       if (srcFs.setReplication(p, (short)targetRepl) == false) {
         LOG.info("Error in reducing replication of " + p + " to " + targetRepl);
         statistics.remainingSize += diskSpace;
@@ -1749,7 +1749,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
                                   FileSystem inFs,
                                   Path destPathPrefix,
                                   Codec codec,
-                                  long blockNum,
+                                  long blockNum,//目录下文件所有的块个数
                                   int srcRepl,
                                   int metaRepl, 
                                   long blockSize,
@@ -1763,7 +1763,7 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
     // If the parity file is already upto-date and source replication is set
     // then nothing to do.
     try {
-      FileStatus stmp = outFs.getFileStatus(outpath);
+      FileStatus stmp = outFs.getFileStatus(outpath);//有校验文件，无需多做处理
       if (stmp.getModificationTime() == stat.getModificationTime() &&
           srcRepl == targetRepl) {
         LOG.info("Parity file for " + inpath + "(" + blockNum +
@@ -1781,11 +1781,11 @@ public abstract class RaidNode implements RaidProtocol, RaidNodeStatusMBean {
     boolean parityGenerated = false;
     if (codec.isDirRaid) {
       long numStripes = (blockNum % codec.stripeLength == 0) ?
-          (blockNum / codec.stripeLength) :
-          ((blockNum / codec.stripeLength) + 1);
+          (blockNum / codec.stripeLength) ://正好是块组的倍数
+          ((blockNum / codec.stripeLength) + 1);//不是快组的倍数就加1
       
       sReader = new DirectoryStripeReader(conf, codec, inFs,
-          ec.startStripe, ec.encodingUnit, inpath, lfs);
+          ec.startStripe, ec.encodingUnit, inpath, lfs);//记录的条纹开始位置
       parityGenerated = encoder.encodeFile(conf, inFs, outFs, outpath, 
           (short)metaRepl, numStripes, blockSize, reporter, sReader, ec);
     } else {
